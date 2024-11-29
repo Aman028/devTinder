@@ -1,8 +1,10 @@
 const express = require("express");
 
 const app = express();
+const { connectDB } = require("./config/database");
 
 const { adminauth, userauth } = require("./middlewares/auth");
+const {User} = require("./models/user");
 
 // app.use("/hello/2", (req, res) => {
 //   res.send("abracadbra");
@@ -86,28 +88,68 @@ const { adminauth, userauth } = require("./middlewares/auth");
 //   }
 // );
 
-app.use("/admin", adminauth);
+// app.get("/user/login", (req, res) => {
+//   res.send("logging the user");
+// });
 
-app.get("/user/login", (req, res) => {
-  res.send("logging the user");
+// app.get("/user/data", userauth, (req, res) => {
+//   res.send("get user");
+// });
+
+//handle auth middleware for all request--> get,post,patch,delete
+// app.use("/admin", adminauth);
+
+// app.get("/admin/getAllData", (req, res) => {
+//   //logic of fetching all data
+//   res.send("get data");
+// });
+
+// app.get("/admin/deleteAllData", (req, res) => {
+//   res.send("delete data");
+// });
+
+//error handling
+// app.use("/", (err,req, res,next) => {
+//   if(err)
+//   {
+//     res.status(500).send("Something went wrong");
+//   }
+//   res.send("Hello from the dashboard");
+// });
+
+// app.use("/", (err,req, res,next) => {
+//   res.send("Hello from the dashboard");
+// });
+
+// app.listen(7777, () => {
+//   console.log("server is successfully on port 7777");
+// });
+
+app.post("/signup", async (req, res) => {
+  const user = new User({
+    firstName: "Aman",
+    lastName: "Kumar",
+    email: "aman@123",
+    password: "aman@123",
+  });
+  try{
+  await user.save();
+  res.send("User Added Successfully");
+  }
+  catch(err)
+  {
+    res.status(400).send("Eroor having "+err.message);
+  }
 });
 
-app.get("/user/data", userauth, (req, res) => {
-  res.send("get user");
-});
-
-app.get("/admin/getAllData", (req, res) => {
-  res.send("get data");
-});
-
-app.get("/admin/deleteAllData", (req, res) => {
-  res.send("delete data");
-});
-
-app.use("/", (req, res) => {
-  res.send("Hello from the dashboard");
-});
-
-app.listen(7777, () => {
-  console.log("server is successfully on port 7777");
-});
+connectDB()
+  .then(() => {
+    console.log("Database connection established");
+    app.listen(7777, () => {
+      console.log("server is successfully listening on port");
+    });
+  })
+  .catch((err) => {
+    console.log(err);
+    console.error("Database cannot be connected");
+  });
