@@ -5,8 +5,12 @@ const { connectDB } = require("./config/database");
 
 const { adminauth, userauth } = require("./middlewares/auth");
 const { User } = require("./models/user");
-
-
+const { validateSignup } = require("./utils/validatesignup");
+const bcrypt = require("bcrypt");
+const validator = require("validator");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middlewares/auth");
 
 // app.use("/hello/2", (req, res) => {
 //   res.send("abracadbra");
@@ -127,6 +131,7 @@ const { User } = require("./models/user");
 //   console.log("server is successfully on port 7777");
 // });
 app.use(express.json());
+app.use(cookieParser());
 app.post("/signup", async (req, res) => {
   // const user = new User({
   //   firstName: "Aman",
@@ -134,12 +139,74 @@ app.post("/signup", async (req, res) => {
   //   email: "aman@123",
   //   password: "aman@123",
   // });
-  const user = new User(req.body);
+
   try {
+    //validate request
+    validateSignup(req);
+    const { firstName, lastName, emailId, password } = req.body;
+    //encrypting password
+    const hashpassword = await bcrypt.hash(password, 10);
+    console.log(hashpassword);
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      password: hashpassword,
+    });
     await user.save();
     res.send("User Added Successfully");
   } catch (err) {
     res.status(400).send("Eroor having " + err.message);
+  }
+});
+
+app.get("/profile", userAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    res.send(user);
+  } catch (err) {
+    res.status(400).send("Error having" + err.message);
+  }
+});
+
+app.post("/sendconnectionrequest", userAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    res.send(user.firstName + "connection request sent");
+  } catch (err) {
+    res.status(400).send("error having" + err.message);
+  }
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    const { emailId, password } = req.body;
+   
+    if (!validator.isEmail(emailId)) {
+      throw new Error("email id is not correct");
+    }
+    const emailidpresent = await User.findOne({ emailId: emailId });
+    if (!emailidpresent) {
+      throw new Error("invalid credentials");
+    }
+
+    const login = await bcrypt.compare(password, emailidpresent.password);
+    if (!login) {
+      throw new Error("Invalid credentials");
+    } else {
+      const token = await jwt.sign(
+        { _id: emailidpresent._id },
+        "Aman@234fkjdkm",
+        { expiresIn: "0d" }
+      );
+      console.log(token);
+      res.cookie("token", token, {
+        expires: new Date(Date.now() + 8 * 3600000),
+      });
+      res.send("login successful");
+    }
+  } catch (err) {
+    res.status(400).send("Error having " + err.message);
   }
 });
 
@@ -204,13 +271,7 @@ app.patch("/update/:userid", async (req, res) => {
   console.log(userId);
   try {
     // const user = await User.findByIdAndUpdate({ _id: userId }, data);
-    const allowed_updates = [
-      "photourl",
-      "about",
-      "gender",
-      "age",
-      "skills",
-    ];
+    const allowed_updates = ["photourl", "about", "gender", "age", "skills"];
     const isUpdateAllowed = Object.keys(data).every((k) =>
       allowed_updates.includes(k)
     );
