@@ -4,7 +4,9 @@ const app = express();
 const { connectDB } = require("./config/database");
 
 const { adminauth, userauth } = require("./middlewares/auth");
-const {User} = require("./models/user");
+const { User } = require("./models/user");
+
+
 
 // app.use("/hello/2", (req, res) => {
 //   res.send("abracadbra");
@@ -124,21 +126,110 @@ const {User} = require("./models/user");
 // app.listen(7777, () => {
 //   console.log("server is successfully on port 7777");
 // });
-
+app.use(express.json());
 app.post("/signup", async (req, res) => {
-  const user = new User({
-    firstName: "Aman",
-    lastName: "Kumar",
-    email: "aman@123",
-    password: "aman@123",
-  });
-  try{
-  await user.save();
-  res.send("User Added Successfully");
+  // const user = new User({
+  //   firstName: "Aman",
+  //   lastName: "Kumar",
+  //   email: "aman@123",
+  //   password: "aman@123",
+  // });
+  const user = new User(req.body);
+  try {
+    await user.save();
+    res.send("User Added Successfully");
+  } catch (err) {
+    res.status(400).send("Eroor having " + err.message);
   }
-  catch(err)
-  {
-    res.status(400).send("Eroor having "+err.message);
+});
+
+app.get("/user", async (req, res) => {
+  const userEmail = req.body.emailId;
+  try {
+    const user = await User.findOne({ emailId: userEmail });
+    // const user = await User.find({ emailId: userEmail });
+    if (user.length === 0) {
+      res.status(400).send("user not found");
+    }
+    res.send(user);
+  } catch (err) {
+    res.status(400).send("Something went wrong");
+  }
+});
+
+app.get("/feed", async (req, res) => {
+  try {
+    const user = await User.find({});
+    if (user.length === 0) {
+      res.status(400).send("No emails");
+    } else {
+      res.send(user);
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong");
+  }
+});
+
+app.get("/id", async (req, res) => {
+  const userId = req.body._id;
+  try {
+    const user = await User.findById({ _id: userId });
+    if (user.length === 0) {
+      res.status(400).send("No emails");
+    } else {
+      res.send(user);
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong");
+  }
+});
+
+app.delete("/delete", async (req, res) => {
+  const userId = req.body._id;
+  try {
+    const user = await User.findByIdAndDelete({ _id: userId });
+    if (user.length === 0) {
+      res.status(400).send("no user");
+    } else {
+      res.send(user);
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong");
+  }
+});
+
+app.patch("/update/:userid", async (req, res) => {
+  const userId = req.params?.userid;
+  const data = req.body;
+  console.log(userId);
+  try {
+    // const user = await User.findByIdAndUpdate({ _id: userId }, data);
+    const allowed_updates = [
+      "photourl",
+      "about",
+      "gender",
+      "age",
+      "skills",
+    ];
+    const isUpdateAllowed = Object.keys(data).every((k) =>
+      allowed_updates.includes(k)
+    );
+    console.log(isUpdateAllowed);
+    if (!isUpdateAllowed) {
+      throw new error("updates not allowed");
+    }
+    const user = await User.findByIdAndUpdate({ _id: userId }, data, {
+      returnDocument: "after",
+      runValidators: true,
+    });
+    console.log(user);
+    if (user.length === 0) {
+      res.status(400).send("no user");
+    } else {
+      res.send(user);
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong");
   }
 });
 
