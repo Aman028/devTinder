@@ -7,7 +7,6 @@ const app = express();
 //   res.send("Matched /abc or /ac");
 // });
 
-
 //+-> it means addition sign means we can add as many character we want
 // app.get(/\/a(b)+c/, (req, res) => {
 //   res.send("ultrimate routing+");
@@ -38,7 +37,6 @@ app.get("/user/:userid", (req, res) => {
   res.send(`Requested user with id: ${userId}`);
 });
 
-
 app.post("/user", (req, res) => {
   res.send("data succewssfully saved to database");
 });
@@ -60,6 +58,51 @@ app.use("/hello", (req, res) => {
 app.use("/test", (req, res) => {
   res.send("hello from test server");
 });
+
+//it will send request infintely bcz we are not giving response back
+app.use("/aman", (req, res) => {});
+
+app.use(
+  "/multiple",
+  (req, res) => {
+    console.log("HANDling the route user 1");
+    res.send("Response 1");
+  },
+  (req, res) => {
+    console.log("HANDLING the rout user 2");
+    res.send("Response 2");
+  }
+);
+
+//does not go to second route it runs infintely
+app.use(
+  "/multiple2",
+  (req, res) => {
+    console.log("HANDling the route user 1");
+    //res.send("Response 1");
+  },
+  (req, res) => {
+    console.log("HANDLING the rout user 2");
+    res.send("Response 2");
+  }
+);
+
+//use next to go to next route
+app.use(
+  "/multiple3",
+  (req, res,next) => {
+    console.log("HANDling the route user 1");
+    //res.send("Response 1");
+    next();
+  },
+  (req, res) => {
+    console.log("HANDLING the rout user 2");
+    res.send("Response 2");
+  }
+);
+
+
+
 //it takes all the request
 app.use("/", (req, res) => {
   res.send("hii from dashboard");
