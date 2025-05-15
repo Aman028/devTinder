@@ -2,6 +2,9 @@ const express = require("express"); //referencing to folder of express in node_m
 
 const app = express();
 
+const {adminAuth}=require("./middlewares/auth");
+const {userAuth}=require("./middlewares/auth");
+
 //?->it means b is not compulsory
 // app.get(/\/ab?c/, (req, res) => {
 //   res.send("Matched /abc or /ac");
@@ -27,7 +30,7 @@ const app = express();
 // })
 
 // req /user /user/xyz  /user/1 you can do dynamic routing using /user/:id
-app.get("/user", (req, res) => {
+app.get("/user", userAuth, (req, res) => {
   res.send({ firstName: "Akshay", lastName: "Saini" });
 });
 
@@ -90,7 +93,7 @@ app.use(
 //use next to go to next route
 app.use(
   "/multiple3",
-  (req, res,next) => {
+  (req, res, next) => {
     console.log("HANDling the route user 1");
     //res.send("Response 1");
     next();
@@ -101,7 +104,21 @@ app.use(
   }
 );
 
+//MIDDLEWARE
+app.use("/admin", adminAuth);
+app.use("/user",userAuth);
 
+app.get("/admin/getAllData", (req, res) => {
+  //logic of fetching all data
+  //check if request is authorized
+  res.send("all data sent");
+});
+
+app.get("/admin/deleteUser", (req, res) => {
+  //logic
+  //check if request is authorized
+  res.send("data deleted");
+});
 
 //it takes all the request
 app.use("/", (req, res) => {
