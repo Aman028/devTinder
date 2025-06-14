@@ -11,4 +11,25 @@ const validateSignUp = (req) => {
   }
 };
 
-module.exports = { validateSignUp };
+const iseditallowed = (req) => {
+  const allowededit = [
+    "firstName",
+    "lastName",
+    "age",
+    "gender",
+    "photoUrl",
+    "about",
+    "skills",
+  ];
+
+  const isallowed = Object.keys(req.body).every((field) =>
+    allowededit.includes(field)
+  );
+  if(isallowed)
+  {
+    return true;
+  }
+  return false;
+};
+
+module.exports = { validateSignUp,iseditallowed };
